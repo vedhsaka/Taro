@@ -1,19 +1,83 @@
 console.log('Taro content script loaded successfully!');
 
-// Function to patch both XMLHttpRequest and fetch
+function createPopup(content) {
+  // Check if a popup already exists and remove it
+  const existingPopup = document.getElementById('harmfulIngredientsPopup');
+  if (existingPopup) {
+    existingPopup.remove();
+  }
+
+  // Create a new popup
+  const popup = document.createElement('div');
+  popup.setAttribute('id', 'harmfulIngredientsPopup');
+  popup.style.position = 'fixed';
+  popup.style.left = '50%';
+  popup.style.top = '50%';
+  popup.style.transform = 'translate(-50%, -50%)';
+  popup.style.zIndex = '9999';
+  popup.style.width = '250px';  // Adjust the size to fit your image
+  popup.style.height = '400px'; // Adjust the height accordingly
+  popup.style.backgroundSize = 'cover';
+  popup.style.backgroundColor = 'rgba(0,0,0,0.8)';
+  popup.style.borderRadius = '15px';
+  popup.style.boxShadow = '0px 0px 20px rgba(0,0,0,0.5)';
+  popup.style.color = '#FFFFFF'; // Ensure text color contrasts well with the image
+  popup.style.display = 'flex';
+  popup.style.flexDirection = 'column';
+  popup.style.justifyContent = 'flex-end';
+  popup.style.padding = '20px';
+  popup.style.fontSize = '16px'; // Adjust font size as needed
+  popup.style.textAlign = 'left';
+
+  const imageContainer = document.createElement('div');
+  imageContainer.style.width = '100px';
+  imageContainer.style.height = '100px';
+  imageContainer.style.backgroundImage = 'url("' + chrome.extension.getURL('taro_image.png') + '")';
+  imageContainer.style.backgroundRepeat = 'no-repeat';
+  imageContainer.style.backgroundPosition = 'center';
+  imageContainer.style.backgroundSize = '100px 100px';
+
+  popup.appendChild(imageContainer);
+
+
+  popup.innerHTML = `<h1>Warning!</h1><p>${content}</p>`;
+
+  
+
+
+  // Close button
+  const closeButton = document.createElement('button');
+  closeButton.textContent = 'X';
+  closeButton.style.position = 'absolute';
+  closeButton.style.top = '10px';
+  closeButton.style.right = '10px';
+  closeButton.style.padding = '5px 10px';
+  closeButton.style.background = 'red';
+  closeButton.style.color = 'white';
+  closeButton.style.border = 'none';
+  closeButton.style.borderRadius = '50%';
+  closeButton.style.fontSize = '16px';
+  closeButton.style.cursor = 'pointer';
+  closeButton.onclick = function() {
+    popup.remove();
+  };
+  popup.appendChild(closeButton);
+
+  document.body.appendChild(popup);
+}
+
+document.addEventListener('DetectedHarmfulIngredients', function(e) {
+  createPopup(e.detail.content);
+});
 function injectScript() {
   document.addEventListener('DOMContentLoaded', function () {
     const script = document.createElement('script');
     script.textContent = `
       (() => {
-        // Function to remove HTML tags from strings
         function removeHtmlTags(htmlString) {
-          const noTags = htmlString.replace(/<\\/?[^>]+(>|$)/g, "");
-          const cleanedString = noTags.replace(/\\s\\s+/g, ' ').trim();
-          return cleanedString;
+          return htmlString.replace(/<\\/?[^>]+(>|$)/g, "").replace(/\\s\\s+/g, ' ').trim();
         }
 
-        // Function to check and count harmful ingredients
         function checkHarmfulIngredients(ingredients) {
           const harmfulIngredients = [
             'Retinoids', 'Retinols', 'Hydroquinon', 'Retin A', 'aluminium chloride', 'phthalates', 
@@ -37,12 +101,14 @@ function injectScript() {
           promise.then(res => {
             if (res.url.includes('/catalog/products/')) {
               res.clone().json().then(data => {
-                console.log('Fetch - Product Name:', data.productDetails.displayName);
                 data.regularChildSkus.forEach(sku => {
                   const cleanIngredients = removeHtmlTags(sku.ingredientDesc);
                   const count = checkHarmfulIngredients(cleanIngredients);
-                  console.log('Fetch - Ingredients:', cleanIngredients);
-                  console.log('Number of harmful ingredients found:', count);
+                  if (count > 0) {
+                    const content = 'Found ' + count + ' harmful ingredients in ' + data.productDetails.displayName;
+                    const event = new CustomEvent('DetectedHarmfulIngredients', { detail: { content: content } });
+                    document.dispatchEvent(event);
+                  }
                 });
               }).catch(err => console.error('Fetch error:', err));
             }
@@ -54,25 +120,23 @@ function injectScript() {
         XMLHttpRequest.prototype.send = function() {
           this.addEventListener('load', function() {
             if (this.responseURL.includes('/catalog/products/')) {
-              try {
-                const data = JSON.parse(this.responseText);
-                console.log('XHR - Product Name:', data.productDetails.displayName);
-                data.regularChildSkus.forEach(sku => {
-                  const cleanIngredients = removeHtmlTags(sku.ingredientDesc);
-                  const count = checkHarmfulIngredients(cleanIngredients);
-                  console.log('XHR - Ingredients:', cleanIngredients);
-                  console.log('Number of harmful ingredients found:', count);
-                });
-              } catch (err) {
-                console.error('XHR parsing error:', err);
-              }
+              const data = JSON.parse(this.responseText);
+              data.regularChildSkus.forEach(sku => {
+                const cleanIngredients = removeHtmlTags(sku.ingredientDesc);
+                const count = checkHarmfulIngredients(cleanIngredients);
+                if (count > 0) {
+                  const content = 'Found ' + count + ' harmful ingredients in ' + data.productDetails.displayName;
+                  const event = new CustomEvent('DetectedHarmfulIngredients', { detail: { content: content } });
+                  document.dispatchEvent(event);
+                }
+              });
             }
           });
           originalSend.apply(this, arguments);
         };
       })();
     `;
-    (document.head || document.documentElement).appendChild(script);
+    document.documentElement.appendChild(script);
     script.remove();
   });
 }

@@ -21,6 +21,10 @@
         "matches": ["https://www.cvs.com/*"],
         "js": ["content_scripts/cvs.js"]
       }
+    ],
+    "web_accessible_resources": [
+      "taro_icon.jpeg",
+      "taro_image.png"
     ]
   }
   
