@@ -1,4 +1,5 @@
 console.log('Taro content script loaded successfully!');
+let minimizedIcon = null;
 
 // Function to create a popup with expandable content
 function createPopup(content, hasHarmfulIngredients) {
@@ -8,7 +9,7 @@ function createPopup(content, hasHarmfulIngredients) {
     existingPopup.remove();
   }
 
-  // Create a new popup that initially shows only the image
+  // Create the initial popup
   const popup = document.createElement('div');
   popup.setAttribute('id', 'harmfulIngredientsPopup');
   popup.style.position = 'fixed';
@@ -29,24 +30,23 @@ function createPopup(content, hasHarmfulIngredients) {
   popup.style.display = 'flex';
   popup.style.justifyContent = 'center';
   popup.style.alignItems = 'center';
-  popup.title = 'Click for details'; // Tooltip to indicate action
+  popup.title = 'Click for details';
 
-  // Expand function to show detailed content
-  function expandPopup() {
-    popup.style.width = '300px'; // Expanded width
-    popup.style.height = '200px'; // Expanded height
-    popup.style.borderRadius = '15px'; // Reset border radius for expanded view
-    popup.innerHTML = `<h1>Harmful Ingredients Detected</h1><p>${content}</p>`; // Adding text
+  // Expand functionality
+  popup.addEventListener('click', function expandPopup() {
+    popup.style.width = '300px';
+    popup.style.height = '200px';
+    popup.style.borderRadius = '15px';
+    popup.style.background = 'white';  // Clear for text visibility
+    popup.innerHTML = `<h1>Harmful Ingredients Detected</h1><p>${content}</p>`;
     popup.style.fontSize = '16px';
-    popup.style.backgroundImage = ''; // Optionally remove the background image on expand
-    popup.style.backgroundColor = 'white'; // Change background color for text visibility
     popup.style.flexDirection = 'column';
     popup.style.padding = '10px';
-    popup.onclick = null; // Remove the click event listener after expansion
+    popup.onclick = null;  // Prevent re-triggering on click
 
-    // Add a close button to the expanded popup
+    // Add a close button
     const closeButton = document.createElement('button');
-    closeButton.innerHTML = '&times;'; // Stylish X as close button
+    closeButton.innerHTML = '&times;';
     closeButton.style.position = 'absolute';
     closeButton.style.top = '5px';
     closeButton.style.right = '10px';
@@ -54,22 +54,36 @@ function createPopup(content, hasHarmfulIngredients) {
     closeButton.style.background = 'none';
     closeButton.style.cursor = 'pointer';
     closeButton.style.fontSize = '24px';
-    closeButton.style.color = 'black'; // Match the theme or change as needed
-    closeButton.title = 'Close'; // Tooltip for close button
+    closeButton.style.color = 'black';
     closeButton.onclick = function() {
       popup.remove();
+      createMinimizedIcon(content);  // Create minimized icon upon close
     };
 
     popup.appendChild(closeButton);
-  }
-
-
-
-
-  // Event listener for expanding the popup
-  popup.addEventListener('click', expandPopup);
+  });
 
   document.body.appendChild(popup);
+}
+
+function createMinimizedIcon(content) {
+  minimizedIcon = document.createElement('div');
+  minimizedIcon.style.position = 'fixed';
+  minimizedIcon.style.bottom = '20px';
+  minimizedIcon.style.right = '20px';
+  minimizedIcon.style.width = '50px';
+  minimizedIcon.style.height = '50px';
+  minimizedIcon.style.backgroundImage = 'url("' + chrome.extension.getURL('taro_image.png') + '")';
+  minimizedIcon.style.backgroundSize = 'cover';
+  minimizedIcon.style.borderRadius = '50%';
+  minimizedIcon.style.boxShadow = '0 4px 6px rgba(0,0,0,0.5)';
+  minimizedIcon.style.cursor = 'pointer';
+  minimizedIcon.style.zIndex = '10000';
+  minimizedIcon.onclick = function() {
+    createPopup(content);  // Re-create expanded popup on click
+  };
+
+  document.body.appendChild(minimizedIcon);
 }
 
 document.addEventListener('DetectedHarmfulIngredients', function(e) {
@@ -81,6 +95,7 @@ document.addEventListener('DetectedHarmfulIngredients', function(e) {
 document.addEventListener('NoHarmfulIngredientsFound', function() {
   createPopup('No harmful ingredients found.', false);
 });
+
 
 function injectScript() {
   document.addEventListener('DOMContentLoaded', function () {
