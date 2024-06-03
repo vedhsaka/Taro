@@ -4,16 +4,27 @@
     "version": "0.1",
     "description": "Taro is a Chrome plugin that flags harmful ingredients in cosmetics and consumables for pregnant women.",
     "permissions": [
-      "activeTab"
+      "activeTab",
+      "webRequest",
+      "<all_urls>",
+      "webRequestBlocking",
+      "tabs",
+      "storage"
     ],
     "content_scripts": [
       {
         "matches": ["https://www.sephora.com/*"],
-        "js": ["content_scripts/sephora.js"]
+        "js": ["content_scripts/sephora.js"],
+        "run_at": "document_start"
       },
       {
         "matches": ["https://www.cvs.com/*"],
         "js": ["content_scripts/cvs.js"]
       }
+    ],
+    "web_accessible_resources": [
+      "taro_icon.jpeg",
+      "taro_image.png"
     ]
   }
+  
