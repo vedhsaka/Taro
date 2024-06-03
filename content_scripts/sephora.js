@@ -1,5 +1,6 @@
 console.log('Taro content script loaded successfully!');
 
+// Function to create a popup with expandable content
 function createPopup(content) {
   // Check if a popup already exists and remove it
   const existingPopup = document.getElementById('harmfulIngredientsPopup');
@@ -7,7 +8,7 @@ function createPopup(content) {
     existingPopup.remove();
   }
 
-  // Create a new popup
+  // Create a new popup that initially shows only the image
   const popup = document.createElement('div');
   popup.setAttribute('id', 'harmfulIngredientsPopup');
   popup.style.position = 'fixed';
@@ -15,53 +16,55 @@ function createPopup(content) {
   popup.style.top = '50%';
   popup.style.transform = 'translate(-50%, -50%)';
   popup.style.zIndex = '9999';
-  popup.style.width = '250px';  // Adjust the size to fit your image
-  popup.style.height = '400px'; // Adjust the height accordingly
+  popup.style.width = '100px'; // Initial width for the image
+  popup.style.height = '100px'; // Initial height for the image
+  popup.style.backgroundImage = 'url("' + chrome.extension.getURL('taro_image.png') + '")';
   popup.style.backgroundSize = 'cover';
-  popup.style.backgroundColor = 'rgba(0,0,0,0.8)';
-  popup.style.borderRadius = '15px';
+  popup.style.borderRadius = '50%';
   popup.style.boxShadow = '0px 0px 20px rgba(0,0,0,0.5)';
-  popup.style.color = '#FFFFFF'; // Ensure text color contrasts well with the image
+  popup.style.cursor = 'pointer';
   popup.style.display = 'flex';
-  popup.style.flexDirection = 'column';
-  popup.style.justifyContent = 'flex-end';
-  popup.style.padding = '20px';
-  popup.style.fontSize = '16px'; // Adjust font size as needed
-  popup.style.textAlign = 'left';
+  popup.style.justifyContent = 'center';
+  popup.style.alignItems = 'center';
+  popup.title = 'Click for details'; // Tooltip to indicate action
 
-  const imageContainer = document.createElement('div');
-  imageContainer.style.width = '100px';
-  imageContainer.style.height = '100px';
-  imageContainer.style.backgroundImage = 'url("' + chrome.extension.getURL('taro_image.png') + '")';
-  imageContainer.style.backgroundRepeat = 'no-repeat';
-  imageContainer.style.backgroundPosition = 'center';
-  imageContainer.style.backgroundSize = '100px 100px';
+  // Expand function to show detailed content
+  function expandPopup() {
+    popup.style.width = '300px'; // Expanded width
+    popup.style.height = '200px'; // Expanded height
+    popup.style.borderRadius = '15px'; // Reset border radius for expanded view
+    popup.innerHTML = `<h1>Harmful Ingredients Detected</h1><p>${content}</p>`; // Adding text
+    popup.style.fontSize = '16px';
+    popup.style.backgroundImage = ''; // Optionally remove the background image on expand
+    popup.style.backgroundColor = 'white'; // Change background color for text visibility
+    popup.style.flexDirection = 'column';
+    popup.style.padding = '10px';
+    popup.onclick = null; // Remove the click event listener after expansion
 
-  popup.appendChild(imageContainer);
+    // Add a close button to the expanded popup
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '&times;'; // Stylish X as close button
+    closeButton.style.position = 'absolute';
+    closeButton.style.top = '5px';
+    closeButton.style.right = '10px';
+    closeButton.style.border = 'none';
+    closeButton.style.background = 'none';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontSize = '24px';
+    closeButton.style.color = 'black'; // Match the theme or change as needed
+    closeButton.title = 'Close'; // Tooltip for close button
+    closeButton.onclick = function() {
+      popup.remove();
+    };
+
+    popup.appendChild(closeButton);
+  }
 
 
-  popup.innerHTML = `<h1>Warning!</h1><p>${content}</p>`;
-
-  
 
 
-  // Close button
-  const closeButton = document.createElement('button');
-  closeButton.textContent = 'X';
-  closeButton.style.position = 'absolute';
-  closeButton.style.top = '10px';
-  closeButton.style.right = '10px';
-  closeButton.style.padding = '5px 10px';
-  closeButton.style.background = 'red';
-  closeButton.style.color = 'white';
-  closeButton.style.border = 'none';
-  closeButton.style.borderRadius = '50%';
-  closeButton.style.fontSize = '16px';
-  closeButton.style.cursor = 'pointer';
-  closeButton.onclick = function() {
-    popup.remove();
-  };
-  popup.appendChild(closeButton);
+  // Event listener for expanding the popup
+  popup.addEventListener('click', expandPopup);
 
   document.body.appendChild(popup);
 }
@@ -69,6 +72,7 @@ function createPopup(content) {
 document.addEventListener('DetectedHarmfulIngredients', function(e) {
   createPopup(e.detail.content);
 });
+
 function injectScript() {
   document.addEventListener('DOMContentLoaded', function () {
     const script = document.createElement('script');
