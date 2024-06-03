@@ -1,7 +1,7 @@
 console.log('Taro content script loaded successfully!');
 
 // Function to create a popup with expandable content
-function createPopup(content) {
+function createPopup(content, hasHarmfulIngredients) {
   // Check if a popup already exists and remove it
   const existingPopup = document.getElementById('harmfulIngredientsPopup');
   if (existingPopup) {
@@ -18,7 +18,10 @@ function createPopup(content) {
   popup.style.zIndex = '9999';
   popup.style.width = '100px'; // Initial width for the image
   popup.style.height = '100px'; // Initial height for the image
-  popup.style.backgroundImage = 'url("' + chrome.extension.getURL('taro_image.png') + '")';
+  const imageUrl = hasHarmfulIngredients
+  ? chrome.runtime.getURL('taro_image.png')
+  : chrome.runtime.getURL('taro_icon.jpeg');
+  popup.style.backgroundImage = 'url("' + imageUrl + '")';
   popup.style.backgroundSize = 'cover';
   popup.style.borderRadius = '50%';
   popup.style.boxShadow = '0px 0px 20px rgba(0,0,0,0.5)';
@@ -70,7 +73,13 @@ function createPopup(content) {
 }
 
 document.addEventListener('DetectedHarmfulIngredients', function(e) {
-  createPopup(e.detail.content);
+  console.log(e);
+  createPopup(e.detail.content, true);
+});
+
+
+document.addEventListener('NoHarmfulIngredientsFound', function() {
+  createPopup('No harmful ingredients found.', false);
 });
 
 function injectScript() {
@@ -105,15 +114,21 @@ function injectScript() {
           promise.then(res => {
             if (res.url.includes('/catalog/products/')) {
               res.clone().json().then(data => {
+                let hasHarmfulIngredients = false;
                 data.regularChildSkus.forEach(sku => {
                   const cleanIngredients = removeHtmlTags(sku.ingredientDesc);
                   const count = checkHarmfulIngredients(cleanIngredients);
                   if (count > 0) {
+                    hasHarmfulIngredients = true;
                     const content = 'Found ' + count + ' harmful ingredients in ' + data.productDetails.displayName;
                     const event = new CustomEvent('DetectedHarmfulIngredients', { detail: { content: content } });
                     document.dispatchEvent(event);
                   }
                 });
+                if (!hasHarmfulIngredients) {
+                  const event = new CustomEvent('NoHarmfulIngredientsFound');
+                  document.dispatchEvent(event);
+                }
               }).catch(err => console.error('Fetch error:', err));
             }
           });
