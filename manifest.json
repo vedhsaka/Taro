@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Taro",
-    "version": "0.1",
+    "version": "0.2",
     "description": "Taro is a Chrome plugin that flags harmful ingredients in cosmetics and consumables for pregnant women.",
     "permissions": [
       "activeTab",

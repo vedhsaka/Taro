@@ -6,7 +6,8 @@ const popupStyles = `
   left: 80%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 280px;
+  height: 46px;
+  width: 300px;
   max-width: 90%;
   background-color: #fff;
   border-radius: 8px;
@@ -18,7 +19,7 @@ const popupStyles = `
 const headerStyles = `
   color: white;
   padding: 12px;
-  border-radius: 8px 8px 0 0;
+  border-radius: 8px;
 `;
 
 const closeButtonStyles = `
@@ -75,10 +76,10 @@ function createPopup(content, isHarmful) {
   header.appendChild(closeButton);
   popup.appendChild(header);
 
-  const body = document.createElement('div');
-  body.style.cssText = bodyStyles;
-  body.innerHTML = content;
-  popup.appendChild(body);
+  // const body = document.createElement('div');
+  // body.style.cssText = bodyStyles;
+  // body.innerHTML = '';
+  // popup.appendChild(body);
 
   document.body.appendChild(popup);
 }
