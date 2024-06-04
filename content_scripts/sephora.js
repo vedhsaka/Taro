@@ -6,7 +6,7 @@ const popupStyles = `
   left: 80%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 400px;
+  width: 280px;
   max-width: 90%;
   background-color: #fff;
   border-radius: 8px;
@@ -16,7 +16,6 @@ const popupStyles = `
 `;
 
 const headerStyles = `
-  background-color: #9C27B0;
   color: white;
   padding: 12px;
   border-radius: 8px 8px 0 0;
@@ -56,6 +55,7 @@ function createPopup(content, isHarmful) {
 
   const header = document.createElement('div');
   header.style.cssText = headerStyles;
+  header.style.backgroundColor = isHarmful ? 'red' : 'green';
 
   const title = document.createElement('span');
   title.innerText = isHarmful ? 'Caution! Detected Harmful Ingredients' : 'Safe to Use';
