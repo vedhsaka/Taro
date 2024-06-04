@@ -18,6 +18,11 @@
         "run_at": "document_start"
       },
       {
+        "matches": ["https://www.target.com/*"],
+        "js": ["content_scripts/target.js"],
+        "run_at": "document_start"
+      },
+      {
         "matches": ["https://www.cvs.com/*"],
         "js": ["content_scripts/cvs.js"]
       }
