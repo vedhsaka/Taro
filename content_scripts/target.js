@@ -31,7 +31,7 @@ const closeButtonStyles = `
   float: right;
   vertical-align: middle;
   position: relative;
-  top: -34px;
+  top: -14px;
 `;
 
 const bodyStyles = `
