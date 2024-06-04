@@ -19,7 +19,7 @@ const popupStyles = `
 const headerStyles = `
   color: white;
   padding: 12px;
-  border-radius: 8px 8px 0 0;
+  border-radius: 8px;
 `;
 
 const closeButtonStyles = `
