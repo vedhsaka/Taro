@@ -6,7 +6,7 @@ const popupStyles = `
   left: 80%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 400px;
+  width: 300px;
   max-width: 90%;
   background-color: #fff;
   border-radius: 8px;
@@ -15,7 +15,6 @@ const popupStyles = `
   margin: 10px;
 `;
 
-// Add CSS styles for the header
 const headerStyles = `
   background-color: #9C27B0;
   color: white;
@@ -23,7 +22,6 @@ const headerStyles = `
   border-radius: 8px 8px 0 0;
 `;
 
-// Add CSS styles for the close button
 const closeButtonStyles = `
   border: none;
   background: none;
@@ -36,14 +34,13 @@ const closeButtonStyles = `
   top: -14px;
 `;
 
-// Add CSS styles for the body content
 const bodyStyles = `
   padding: 16px;
   font-family: Arial, sans-serif;
   font-size: 14px;
 `;
 
-function createPopup(content) {
+function createPopup(content, isHarmful) {
   const existingPopup = document.getElementById('harmfulIngredientsPopup');
   if (existingPopup) {
     existingPopup.remove();
@@ -51,34 +48,23 @@ function createPopup(content) {
 
   const popup = document.createElement('div');
   popup.setAttribute('id', 'harmfulIngredientsPopup');
-  popup.style.position = 'fixed';
-  popup.style.left = '50%';
-  popup.style.top = '50%';
-  popup.style.transform = 'translate(-50%, -50%)';
-  popup.style.zIndex = '9999';
-  popup.style.width = '100px'; // Initial width for the image
-  popup.style.height = '100px'; // Initial height for the image
-  const imageUrl = hasHarmfulIngredients
-  ? chrome.runtime.getURL('taro_image.png')
-  : chrome.runtime.getURL('taro_icon.jpeg');
-  popup.style.backgroundImage = 'url("' + imageUrl + '")';
-  popup.style.backgroundSize = 'cover';
-  popup.style.borderRadius = '50%';
-  popup.style.boxShadow = '0px 0px 20px rgba(0,0,0,0.5)';
-  popup.style.cursor = 'pointer';
-  popup.style.display = 'flex';
-  popup.style.justifyContent = 'center';
-  popup.style.alignItems = 'center';
-  popup.style = 'position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; background-image: url("' + chrome.runtime.getURL('taro_image.png') + '"); background-size: cover; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.5); cursor: pointer; z-index: 10000;';
-  popup.title = 'Click for details';
-  popup.id = 'harmfulIngredientsPopup';
   popup.style.cssText = popupStyles;
+
+  const imageUrl = chrome.runtime.getURL('taro_image.png')
+
+  popup.style.backgroundImage = `url("${imageUrl}")`;
+  popup.title = 'Click for details';
 
   const header = document.createElement('div');
   header.style.cssText = headerStyles;
 
   const title = document.createElement('span');
-  title.innerText = 'Caution! Detected Harmful Ingredients';
+
+  if (isHarmful) {
+    title.innerText = 'Caution! Detected Harmful Ingredients';
+  } else {
+    title.innerText = 'Safe to Use';
+  }
   title.style.fontWeight = 'bold';
 
   const closeButton = document.createElement('button');
@@ -94,9 +80,10 @@ function createPopup(content) {
   header.appendChild(title);
   header.appendChild(closeButton);
   popup.appendChild(header);
+
   const body = document.createElement('div');
   body.style.cssText = bodyStyles;
-  body.innerHTML = content; // Assuming content is already formatted appropriately
+  body.innerHTML = content;
   popup.appendChild(body);
 
   document.body.appendChild(popup);
@@ -104,7 +91,7 @@ function createPopup(content) {
 
 function createMinimizedIcon(content) {
   minimizedIcon = document.createElement('div');
-  minimizedIcon.style = 'position: fixed; top: 35%; right: 20%; width: 50px; height: 50px; background-image: url("' + chrome.runtime.getURL('taro_image.png') + '"); background-size: cover; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.5); cursor: pointer; z-index: 10001;';
+  minimizedIcon.style = 'position: fixed; top: 35%; right: 10%; width: 60px; height: 60px; background-image: url("' + chrome.runtime.getURL('taro_image.png') + '"); background-size: cover; border-radius: 50%; border: 5px solid purple; box-shadow: 0 4px 6px rgba(0,0,0,0.5); cursor: pointer; z-index: 10001;';
   minimizedIcon.onclick = function() {
     this.remove();
     minimizedIcon = null;
@@ -119,7 +106,6 @@ document.addEventListener('DetectedHarmfulIngredients', function(e) {
   createMinimizedIcon(e.detail.content);
   createPopup(e.detail.content, true);
 });
-
 
 document.addEventListener('NoHarmfulIngredientsFound', function() {
   createPopup('No harmful ingredients found.', false);
@@ -169,8 +155,12 @@ function injectScript() {
                 const level1Count = checkIngredients(cleanIngredients, level1Ingredients);
                 const level2Count = checkIngredients(cleanIngredients, level2Ingredients);
                 if (level1Count > 0 || level2Count > 0) {
-                  const content = \`Found \${level1Count} Level 1 harmful ingredient(s) - <i>DO NOT USE</i>) <br> \${level2Count} Level 2 harmful ingredient(s).<br>\`;
+                  const content = \`Product contains ingredient(s) to be avoided during pregnancy\`;
                   const event = new CustomEvent('DetectedHarmfulIngredients', { detail: { content: content } });
+                  document.dispatchEvent(event);
+                } else {  
+                  const contentNoChemicals = 'No harmful ingredients found.';
+                  const event = new CustomEvent('DetectedHarmfulIngredients', { detail: { content: contentNoChemicals } });
                   document.dispatchEvent(event);
                 }
               });
