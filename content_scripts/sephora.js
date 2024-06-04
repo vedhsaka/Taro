@@ -1,13 +1,49 @@
 console.log('Taro content script loaded successfully!');
 let minimizedIcon = null;
 
-<<<<<<< HEAD
-// Function to create a popup with expandable content
-function createPopup(content, hasHarmfulIngredients) {
-  // Check if a popup already exists and remove it
-=======
+const popupStyles = `
+  position: fixed;
+  left: 80%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  max-width: 90%;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  margin: 10px;
+`;
+
+// Add CSS styles for the header
+const headerStyles = `
+  background-color: #9C27B0;
+  color: white;
+  padding: 12px;
+  border-radius: 8px 8px 0 0;
+`;
+
+// Add CSS styles for the close button
+const closeButtonStyles = `
+  border: none;
+  background: none;
+  color: white;
+  cursor: pointer;
+  font-size: 30px;
+  float: right;
+  vertical-align: middle;
+  position: relative;
+  top: -14px;
+`;
+
+// Add CSS styles for the body content
+const bodyStyles = `
+  padding: 16px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+`;
+
 function createPopup(content) {
->>>>>>> 43c7f74 (Update)
   const existingPopup = document.getElementById('harmfulIngredientsPopup');
   if (existingPopup) {
     existingPopup.remove();
@@ -15,7 +51,6 @@ function createPopup(content) {
 
   const popup = document.createElement('div');
   popup.setAttribute('id', 'harmfulIngredientsPopup');
-<<<<<<< HEAD
   popup.style.position = 'fixed';
   popup.style.left = '50%';
   popup.style.top = '50%';
@@ -34,48 +69,37 @@ function createPopup(content) {
   popup.style.display = 'flex';
   popup.style.justifyContent = 'center';
   popup.style.alignItems = 'center';
-=======
   popup.style = 'position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; background-image: url("' + chrome.runtime.getURL('taro_image.png') + '"); background-size: cover; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.5); cursor: pointer; z-index: 10000;';
->>>>>>> 43c7f74 (Update)
   popup.title = 'Click for details';
+  popup.id = 'harmfulIngredientsPopup';
+  popup.style.cssText = popupStyles;
+
+  const header = document.createElement('div');
+  header.style.cssText = headerStyles;
+
+  const title = document.createElement('span');
+  title.innerText = 'Caution! Detected Harmful Ingredients';
+  title.style.fontWeight = 'bold';
+
+  const closeButton = document.createElement('button');
+  closeButton.innerHTML = '&times;';
+  closeButton.style.cssText = closeButtonStyles;
+  closeButton.onclick = function() {
+    popup.remove();
+    if (!minimizedIcon) {
+      createMinimizedIcon(content);
+    }
+  };
+
+  header.appendChild(title);
+  header.appendChild(closeButton);
+  popup.appendChild(header);
+  const body = document.createElement('div');
+  body.style.cssText = bodyStyles;
+  body.innerHTML = content; // Assuming content is already formatted appropriately
+  popup.appendChild(body);
+
   document.body.appendChild(popup);
-
-  popup.addEventListener('click', function expandPopup() {
-    this.style.width = '400px';
-    this.style.height = '200px';
-    this.style.borderRadius = '8px';
-    this.style.background = '#FFFFFF';
-    this.style.backgroundImage = '';
-    this.innerHTML = '';
-
-    const header = document.createElement('div');
-    header.style = 'padding: 10px; background-color: #9C27B0; color: white; display: flex; justify-content: space-between; align-items: center;';
-
-    const title = document.createElement('span');
-    title.innerText = 'Detected Harmful Ingredients';
-    title.style.fontWeight = 'bold';
-
-    const closeButton = document.createElement('button');
-    closeButton.innerHTML = '&times;';
-    closeButton.style = 'border: none; background: none; color: white; cursor: pointer; font-size: 24px;';
-    closeButton.onclick = function() {
-      popup.remove();
-      if (!minimizedIcon) {
-        createMinimizedIcon(content);
-      }
-    };
-
-    header.appendChild(title);
-    header.appendChild(closeButton);
-    popup.appendChild(header);
-
-    const body = document.createElement('div');
-    body.style = 'padding: 20px; overflow-y: auto; background-color: white;';
-    body.innerText = content;
-    popup.appendChild(body);
-
-    popup.removeEventListener('click', expandPopup);
-  });
 }
 
 function createMinimizedIcon(content) {
@@ -145,7 +169,7 @@ function injectScript() {
                 const level1Count = checkIngredients(cleanIngredients, level1Ingredients);
                 const level2Count = checkIngredients(cleanIngredients, level2Ingredients);
                 if (level1Count > 0 || level2Count > 0) {
-                  const content = \`Product Name: \${data.productDetails.displayName}\nFound \${level1Count} Level 1 harmful ingredients (DO NOT USE) and \${level2Count} Level 2 harmful ingredients (consult with a doctor).\`;
+                  const content = \`Found \${level1Count} Level 1 harmful ingredient(s) - <i>DO NOT USE</i>) <br> \${level2Count} Level 2 harmful ingredient(s).<br>\`;
                   const event = new CustomEvent('DetectedHarmfulIngredients', { detail: { content: content } });
                   document.dispatchEvent(event);
                 }
@@ -166,7 +190,7 @@ function injectScript() {
               const level1Count = checkIngredients(cleanIngredients, level1Ingredients);
               const level2Count = checkIngredients(cleanIngredients, level2Ingredients);
               if (level1Count > 0 || level2Count > 0) {
-                const content = \`Product Name: \${data.productDetails.displayName}\nFound \${level1Count} Level 1 harmful ingredients (DO NOT USE) and \${level2Count} Level 2 harmful ingredients (consult with a doctor).\`;
+                const content = \`Product Name: \${data.productDetails.displayName}<br>Found \${level1Count} Level 1 harmful ingredient(s) (DO NOT USE) and \${level2Count} Level 2 harmful ingredient(s) (consult with a doctor).\`;
                 const event = new CustomEvent('DetectedHarmfulIngredients', { detail: { content: content } });
                 document.dispatchEvent(event);
               }
